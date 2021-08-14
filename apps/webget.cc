@@ -3,6 +3,7 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <random>
 
 using namespace std;
 
@@ -16,9 +17,27 @@ void get_URL(const string &host, const string &path) {
     // Then you'll need to print out everything the server sends back,
     // (not just one call to read() -- everything) until you reach
     // the "eof" (end of file).
+    // uint16_t portnumber = ((std::random_device()()) % 50000) + 1025;
 
-    cerr << "Function called: get_URL(" << host << ", " << path << ").\n";
-    cerr << "Warning: get_URL() has not been implemented yet.\n";
+    TCPSocket socket1;
+    // socket1.bind(Address("127.0.0.1", portnumber));
+    socket1.connect(Address(host, "http"));
+    socket1.write("GET " + path + " HTTP/1.1\r\nHost: " + host + "\r\n\r\n\r\n");
+    socket1.shutdown(SHUT_WR);
+    /*
+        When the shutdown(SHUT_WR) are called the server will send you one reply and then will end its own outgoing bytestream (the one from the server’s socket to your socket). If you don’t shut down your outgoing byte stream, the server will wait around for a while for you to send additional requests and won’t end its outgoing byte stream either.
+    */
+    while(!socket1.eof())
+        std::cout << socket1.read();
+    /*
+        Make sure to read and print all the output from the server until the socket reaches “EOF” (end of file)--- a single call to read is not enough.
+
+        Example (?)
+    */
+    socket1.close();
+
+    // cerr << "Function called: get_URL(" << host << ", " << path << ").\n";
+    // cerr << "Warning: get_URL() has not been implemented yet.\n";
 }
 
 int main(int argc, char *argv[]) {
