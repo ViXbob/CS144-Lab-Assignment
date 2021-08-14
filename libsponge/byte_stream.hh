@@ -11,13 +11,17 @@
 class ByteStream {
   private:
     // Your code here -- add private members as necessary.
+    size_t _capacity;
+    size_t _l, _r; // bytes
+    std::string _byte_stream;
+    bool _end;
 
     // Hint: This doesn't need to be a sophisticated data structure at
     // all, but if any of your tests are taking longer than a second,
     // that's a sign that you probably want to keep exploring
     // different approaches.
 
-    bool _error{};  //!< Flag indicating that the stream suffered an error.
+    bool _error;  //!< Flag indicating that the stream suffered an error.
 
   public:
     //! Construct a stream with room for `capacity` bytes.
