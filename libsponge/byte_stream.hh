@@ -2,6 +2,7 @@
 #define SPONGE_LIBSPONGE_BYTE_STREAM_HH
 
 #include <string>
+#include <queue>
 
 //! \brief An in-order byte stream.
 
@@ -12,8 +13,9 @@ class ByteStream {
   private:
     // Your code here -- add private members as necessary.
     size_t _capacity;
-    size_t _l, _r; // bytes
-    std::string _byte_stream;
+    size_t _byte_written;
+    size_t _byte_read;
+    std::deque<char> _byte_stream;
     bool _end;
 
     // Hint: This doesn't need to be a sophisticated data structure at
