@@ -1,4 +1,6 @@
 #include "stream_reassembler.hh"
+#include <iostream>
+#include <limits>
 
 // Dummy implementation of a stream reassembler.
 
@@ -12,15 +14,83 @@ void DUMMY_CODE(Targs &&... /* unused */) {}
 
 using namespace std;
 
-StreamReassembler::StreamReassembler(const size_t capacity) : _output(capacity), _capacity(capacity) {}
+void StreamReassembler::remove_segement(const Type1 &it, size_t l, size_t r) {
+    DUMMY_CODE(it, l, r);
+    if(l >= it -> second || r <= it -> first) return;
+    if(l >= it -> first) {
+        auto new_node = make_pair(r, it -> second);
+        _stored_bytes += min(r, it -> second) - l;
+        auto node = _used_byte.extract(it);
+        node.value().second = l;
+        if(node.value().second > node.value().first)
+            _used_byte.insert(move(node));
+        if(new_node.second > new_node.first)
+            _used_byte.insert(new_node);
+    } else {
+        _stored_bytes += min(r, it -> second) - it -> first;
+        auto node = _used_byte.extract(it);
+        node.value().first = r;
+        if(node.value().second > node.value().first)
+            _used_byte.insert(move(node));
+    }
+}
+
+StreamReassembler::StreamReassembler(const size_t capacity) : 
+    _output(capacity), _capacity(capacity), _assembled_bytes(0), _stored_bytes(0), _str_to_assemble(), _existed(), _eof(false), _used_byte{std::make_pair(0, std::numeric_limits<size_t>::max())} {}
 
 //! \details This function accepts a substring (aka a segment) of bytes,
 //! possibly out-of-order, from the logical stream, and assembles any newly
 //! contiguous substrings and writes them into the output stream in order.
 void StreamReassembler::push_substring(const string &data, const size_t index, const bool eof) {
     DUMMY_CODE(data, index, eof);
+    if(index >= _capacity + _output.bytes_read()) return;
+    string tmp(data);
+    if(index + tmp.size() > _capacity + _output.bytes_read()) {
+        tmp.resize(_capacity + _output.bytes_read() - index);
+    } else _eof |= eof;
+    
+    if(index + tmp.size() <= _assembled_bytes) {
+        if(empty()) _output.end_input();
+        return;
+    }
+    
+    // Calculate stored bytes
+    decltype(_used_byte)::iterator it_l = _used_byte.lower_bound(make_pair(index, index));
+    decltype(_used_byte)::iterator it_r = _used_byte.lower_bound(make_pair(index + tmp.size(), index + tmp.size()));
+
+    if(it_l != _used_byte.begin()) it_l--;
+    while(it_l != _used_byte.end()) {
+        remove_segement(it_l, index, index + tmp.size());
+        if(it_l == it_r) break;
+        it_l++;
+    }
+
+    decltype(_existed)::iterator it = _existed.lower_bound(index);
+    if(it == _existed.end()) {
+        _str_to_assemble.push_back(make_pair(tmp, index));
+        _existed[index] = (--_str_to_assemble.end());
+    } else {
+        if(it -> first == index) {
+            if(tmp.size() > (it -> second -> first).size()) {
+                *(it -> second) = make_pair(tmp, index);
+            }
+        } else {
+            _existed[index] = _str_to_assemble.insert(it -> second, make_pair(tmp, index));
+        }
+    }
+    while(!_str_to_assemble.empty() && _str_to_assemble.front().second <= _assembled_bytes) {
+        size_t _index = _str_to_assemble.front().second;
+        string _data = _str_to_assemble.front().first;
+        if(_index + _data.size() > _assembled_bytes) {
+            _output.write(_data.substr(_assembled_bytes - _index, _index + _data.size() - _assembled_bytes));
+            _assembled_bytes = _index + _data.size();
+        }
+        _existed.erase(_index);
+        _str_to_assemble.pop_front();
+    }
+    if(empty()) _output.end_input();
 }
 
-size_t StreamReassembler::unassembled_bytes() const { return {}; }
+size_t StreamReassembler::unassembled_bytes() const { return _stored_bytes - _assembled_bytes; }
 
-bool StreamReassembler::empty() const { return {}; }
+bool StreamReassembler::empty() const { return (_stored_bytes == _assembled_bytes) && _eof; }

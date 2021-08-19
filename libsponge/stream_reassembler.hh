@@ -5,6 +5,12 @@
 
 #include <cstdint>
 #include <string>
+#include <list>
+#include <utility>
+#include <iterator>
+#include <map>
+#include <set>
+#include <vector>
 
 //! \brief A class that assembles a series of excerpts from a byte stream (possibly out of order,
 //! possibly overlapping) into an in-order byte stream.
@@ -14,6 +20,16 @@ class StreamReassembler {
 
     ByteStream _output;  //!< The reassembled in-order byte stream
     size_t _capacity;    //!< The maximum number of bytes
+    size_t _assembled_bytes;
+    size_t _stored_bytes;
+    std::list<std::pair<std::string, size_t>> _str_to_assemble;
+    std::map<size_t, std::list<std::pair<std::string, size_t>>::iterator> _existed;
+    bool _eof;
+    std::set<std::pair<size_t, size_t>> _used_byte;
+
+    using Type1 = std::set<std::pair<size_t, size_t>>::iterator;
+
+    void remove_segement(const Type1 &it, size_t l, size_t r);
 
   public:
     //! \brief Construct a `StreamReassembler` that will store up to `capacity` bytes.
