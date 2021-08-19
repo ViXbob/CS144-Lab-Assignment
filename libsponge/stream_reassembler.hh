@@ -28,8 +28,9 @@ class StreamReassembler {
     std::set<std::pair<size_t, size_t>> _used_byte;
 
     using Type1 = std::set<std::pair<size_t, size_t>>::iterator;
+    using Type2 = std::vector<std::pair<size_t, size_t>>;
 
-    void remove_segement(const Type1 &it, size_t l, size_t r);
+    void remove_segement(const Type1 &it, size_t l, size_t r, Type2 &_erase, Type2 &_insert);
 
   public:
     //! \brief Construct a `StreamReassembler` that will store up to `capacity` bytes.

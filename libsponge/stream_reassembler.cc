@@ -1,6 +1,7 @@
 #include "stream_reassembler.hh"
 #include <iostream>
 #include <limits>
+#include <vector>
 
 // Dummy implementation of a stream reassembler.
 
@@ -14,24 +15,25 @@ void DUMMY_CODE(Targs &&... /* unused */) {}
 
 using namespace std;
 
-void StreamReassembler::remove_segement(const Type1 &it, size_t l, size_t r) {
+void StreamReassembler::remove_segement(const Type1 &it, size_t l, size_t r, Type2 &_erase, Type2 &_insert) {
     DUMMY_CODE(it, l, r);
     if(l >= it -> second || r <= it -> first) return;
+    _erase.push_back(*it);
     if(l >= it -> first) {
         auto new_node = make_pair(r, it -> second);
         _stored_bytes += min(r, it -> second) - l;
-        auto node = _used_byte.extract(it);
-        node.value().second = l;
-        if(node.value().second > node.value().first)
-            _used_byte.insert(move(node));
+        auto node = *it;
+        node.second = l;
+        if(node.second > node.first)
+            _insert.push_back(node);
         if(new_node.second > new_node.first)
-            _used_byte.insert(new_node);
+            _insert.push_back(new_node);
     } else {
         _stored_bytes += min(r, it -> second) - it -> first;
-        auto node = _used_byte.extract(it);
-        node.value().first = r;
-        if(node.value().second > node.value().first)
-            _used_byte.insert(move(node));
+        auto node = *it;
+        node.second = r;
+        if(node.second > node.first)
+            _insert.push_back(node);
     }
 }
 
@@ -58,12 +60,16 @@ void StreamReassembler::push_substring(const string &data, const size_t index, c
     decltype(_used_byte)::iterator it_l = _used_byte.lower_bound(make_pair(index, index));
     decltype(_used_byte)::iterator it_r = _used_byte.lower_bound(make_pair(index + tmp.size(), index + tmp.size()));
 
+    vector<pair<size_t, size_t>> _need_to_erase{}, _need_to_insert{};
+
     if(it_l != _used_byte.begin()) it_l--;
     while(it_l != _used_byte.end()) {
-        remove_segement(it_l, index, index + tmp.size());
+        remove_segement(it_l, index, index + tmp.size(), _need_to_erase, _need_to_insert);
         if(it_l == it_r) break;
         it_l++;
     }
+    for(auto v : _need_to_erase) _used_byte.erase(v);
+    for(auto v : _need_to_insert) _used_byte.insert(v);
 
     decltype(_existed)::iterator it = _existed.lower_bound(index);
     if(it == _existed.end()) {
