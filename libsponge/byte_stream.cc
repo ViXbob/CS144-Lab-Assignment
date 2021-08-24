@@ -19,13 +19,10 @@ _capacity(capacity), _byte_written(0), _byte_read(0), _byte_stream(0), _end(fals
 
 size_t ByteStream::write(const string &data) {
     DUMMY_CODE(data);
-    size_t p = 0;
-    while(_byte_stream.size() < _capacity && p < data.size()) {
-        _byte_stream.push_back(data[p]);
-        p++;
-        _byte_written++;
-    }
-    return p;
+    size_t delta_len = std::min(data.size(), _capacity - _byte_stream.size());
+    _byte_stream.insert(_byte_stream.end(), data.begin(), data.begin() + delta_len);
+    _byte_written += delta_len;
+    return delta_len;
 }
 
 //! \param[in] len bytes will be copied from the output side of the buffer
@@ -37,12 +34,9 @@ string ByteStream::peek_output(const size_t len) const {
 //! \param[in] len bytes will be removed from the output side of the buffer
 void ByteStream::pop_output(const size_t len) { 
     DUMMY_CODE(len); 
-    size_t p = 0;
-    for( ; p < len && _byte_stream.begin() != _byte_stream.end(); p++) {
-        _byte_stream.pop_front();
-        _byte_read++;
-    }
-        
+    size_t delta_len = std::min(len, _byte_stream.size());
+    _byte_stream.erase(_byte_stream.begin(), _byte_stream.begin() + delta_len);
+    _byte_read += delta_len;
 }
 
 //! Read (i.e., copy and then pop) the next "len" bytes of the stream
@@ -50,13 +44,9 @@ void ByteStream::pop_output(const size_t len) {
 //! \returns a string
 std::string ByteStream::read(const size_t len) {
     DUMMY_CODE(len);
-    size_t p = 0;
-    std::string rtn = "";
-    for( ; p < len && _byte_stream.begin() != _byte_stream.end(); p++) {
-        rtn += _byte_stream.front();
-        _byte_stream.pop_front();
-        _byte_read++;
-    }
+    size_t delta_len = std::min(len, _byte_stream.size());
+    std::string rtn(_byte_stream.begin(), _byte_stream.begin() + delta_len);
+    pop_output(len);
     return rtn;
 }
 
