@@ -44,7 +44,7 @@ uint64_t unwrap(WrappingInt32 n, WrappingInt32 isn, uint64_t checkpoint);
 //! \returns the number of increments needed to get from `b` to `a`,
 //! negative if the number of decrements needed is less than or equal to
 //! the number of increments
-inline int32_t operator-(WrappingInt32 a, WrappingInt32 b) { return a.raw_value() - b.raw_value(); }
+inline uint32_t operator-(WrappingInt32 a, WrappingInt32 b) { return a.raw_value() - b.raw_value(); }
 
 //! \brief Whether the two integers are equal.
 inline bool operator==(WrappingInt32 a, WrappingInt32 b) { return a.raw_value() == b.raw_value(); }
