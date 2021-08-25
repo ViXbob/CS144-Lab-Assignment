@@ -99,4 +99,6 @@ void StreamReassembler::push_substring(const string &data, const size_t index, c
 
 size_t StreamReassembler::unassembled_bytes() const { return _stored_bytes - _assembled_bytes; }
 
+size_t StreamReassembler::assembled_bytes() const { return _assembled_bytes; }
+
 bool StreamReassembler::empty() const { return (_stored_bytes == _assembled_bytes) && _eof; }

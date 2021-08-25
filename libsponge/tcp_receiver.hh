@@ -7,6 +7,7 @@
 #include "wrapping_integers.hh"
 
 #include <optional>
+#include <queue>
 
 //! \brief The "receiver" part of a TCP implementation.
 
@@ -20,12 +21,14 @@ class TCPReceiver {
     //! The maximum number of bytes we'll store.
     size_t _capacity;
 
+    std::optional<WrappingInt32> _ISN;
+    
   public:
     //! \brief Construct a TCP receiver
     //!
     //! \param capacity the maximum number of bytes that the receiver will
     //!                 store in its buffers at any give time.
-    TCPReceiver(const size_t capacity) : _reassembler(capacity), _capacity(capacity) {}
+    TCPReceiver(const size_t capacity) : _reassembler(capacity), _capacity(capacity), _ISN() {}
 
     //! \name Accessors to provide feedback to the remote TCPSender
     //!@{
@@ -61,6 +64,7 @@ class TCPReceiver {
     ByteStream &stream_out() { return _reassembler.stream_out(); }
     const ByteStream &stream_out() const { return _reassembler.stream_out(); }
     //!@}
+    size_t _ackno() const;
 };
 
 #endif  // SPONGE_LIBSPONGE_TCP_RECEIVER_HH
