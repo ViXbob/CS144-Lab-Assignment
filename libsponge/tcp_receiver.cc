@@ -14,12 +14,12 @@ void TCPReceiver::segment_received(const TCPSegment &seg) {
     DUMMY_CODE(seg);
     if(seg.header().syn) _ISN.emplace(seg.header().seqno);
     if(!_ISN.has_value()) return;
-   size_t index = unwrap(seg.header().seqno, _ISN.value(), _ackno()) - !seg.header().syn;
+    size_t index = unwrap(seg.header().seqno, _ISN.value(), _ackno()) - !seg.header().syn;
     _reassembler.push_substring(seg.payload().copy(), index, seg.header().fin);
 }
 
 optional<WrappingInt32> TCPReceiver::ackno() const { 
-    if(_ISN.has_value()) return _ISN.value() + static_cast<uint32_t>(_ackno());
+    if(_ISN.has_value()) return wrap(_ackno(), _ISN.value());
     else return optional<WrappingInt32>();
 }
 

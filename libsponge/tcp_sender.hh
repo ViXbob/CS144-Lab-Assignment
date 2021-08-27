@@ -8,6 +8,8 @@
 
 #include <functional>
 #include <queue>
+#include <set>
+#include <utility>
 
 //! \brief The "sender" part of a TCP implementation.
 
@@ -16,7 +18,51 @@
 //! maintains the Retransmission Timer, and retransmits in-flight
 //! segments if the retransmission timer expires.
 class TCPSender {
+  using Type1 = std::pair<uint64_t, TCPSegment>;
   private:
+    class TCPSegmentComparator {
+        public:
+            TCPSegmentComparator() {}
+            ~TCPSegmentComparator() {}
+            bool operator ()(const Type1 &lhs, const Type1 &rhs) const {
+                return lhs.first < rhs.first;
+            }
+    };
+
+    class RetransmissionTimer {
+        public:
+            RetransmissionTimer(uint32_t initial_time, bool set_expired, bool set_stopped) 
+                : _remaining_time(initial_time)
+                , _is_expired(set_expired) 
+                , _is_stopped(set_stopped) {}
+
+            void time_expired(uint32_t time_to_expire) {
+                if(_is_stopped) return;
+                if(time_to_expire >= _remaining_time) _is_expired = true;
+                else _remaining_time -= time_to_expire;
+            }
+
+            bool is_expired() { return _is_expired && !_is_stopped; }
+
+            bool is_stopped() { return _is_stopped; }
+
+            void set_new_timer(uint32_t initial_time) {
+                _remaining_time = initial_time;
+                _is_expired = false;
+                _is_stopped = false;
+            }
+
+            void stop() {
+                _is_stopped = true;
+                _is_expired = false;
+                _remaining_time = 0;
+            }
+        private:
+            uint32_t _remaining_time;
+            bool _is_expired{0};
+            bool _is_stopped{0};
+    };
+
     //! our initial sequence number, the number for our SYN.
     WrappingInt32 _isn;
 
@@ -32,6 +78,23 @@ class TCPSender {
     //! the (absolute) sequence number for the next byte to be sent
     uint64_t _next_seqno{0};
 
+    uint64_t _bytes_in_flight{0};
+
+    uint32_t _consecutive_retransmissions{0};
+
+    uint64_t _ackno{0};
+
+    uint32_t _rto;
+
+    std::set<Type1, TCPSegmentComparator> _outstanding_segment{};
+
+    RetransmissionTimer _timer{0, false, true};
+
+    uint16_t _window_size{1};
+
+    bool _syn{false};
+
+    bool _fin{false};
   public:
     //! Initialize a TCPSender
     TCPSender(const size_t capacity = TCPConfig::DEFAULT_CAPACITY,
@@ -87,6 +150,8 @@ class TCPSender {
     //! \brief relative seqno for the next byte to be sent
     WrappingInt32 next_seqno() const { return wrap(_next_seqno, _isn); }
     //!@}
+
+    void pop_outstanding_segment();
 };
 
 #endif  // SPONGE_LIBSPONGE_TCP_SENDER_HH
