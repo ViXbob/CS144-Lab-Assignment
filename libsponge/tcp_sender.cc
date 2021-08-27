@@ -104,7 +104,6 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
 void TCPSender::tick(const size_t ms_since_last_tick) { 
     DUMMY_CODE(ms_since_last_tick);
     _timer.time_expired(ms_since_last_tick);
-    pop_outstanding_segment();
     if(_timer.is_expired() && !_outstanding_segment.empty()) {
         _segments_out.push(_outstanding_segment.begin() -> second);
         if(_window_size > 0) {
@@ -112,8 +111,7 @@ void TCPSender::tick(const size_t ms_since_last_tick) {
             _rto <<= 1;
         }
         _timer.set_new_timer(_rto);
-    } else if(_outstanding_segment.empty()) 
-        _timer.stop();
+    }
 }
 
 unsigned int TCPSender::consecutive_retransmissions() const { return _consecutive_retransmissions; }
