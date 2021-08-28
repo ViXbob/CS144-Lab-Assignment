@@ -97,8 +97,8 @@ void TCPConnection::tick(const size_t ms_since_last_tick) {
     _sender.tick(ms_since_last_tick);
     collect_output();
     if(_sender.consecutive_retransmissions() > TCPConfig::MAX_RETX_ATTEMPTS) {
-       unclear_shutdown();
-       send_rst_to_peer();
+        send_rst_to_peer();
+        unclear_shutdown();
     }
 }
 

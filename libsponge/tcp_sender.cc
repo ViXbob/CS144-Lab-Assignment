@@ -106,11 +106,12 @@ void TCPSender::tick(const size_t ms_since_last_tick) {
     DUMMY_CODE(ms_since_last_tick);
     _timer.time_expired(ms_since_last_tick);
     if(_timer.is_expired() && !_outstanding_segment.empty()) {
-        _segments_out.push(_outstanding_segment.begin() -> second);
         if(_window_size > 0) {
             _consecutive_retransmissions++;
             _rto <<= 1;
         }
+        if(_consecutive_retransmissions <= TCPConfig::MAX_RETX_ATTEMPTS) 
+            _segments_out.push(_outstanding_segment.begin() -> second);
         _timer.set_new_timer(_rto);
     }
 }
