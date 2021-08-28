@@ -88,6 +88,7 @@ void TCPSender::fill_window() {
 void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_size) { 
     DUMMY_CODE(ackno, window_size); 
     uint64_t new_ackno = unwrap(ackno, _isn, _ackno);
+    if(new_ackno > _next_seqno) return;
     if(new_ackno > _ackno) {
         _rto = _initial_retransmission_timeout;
         _consecutive_retransmissions = 0;
