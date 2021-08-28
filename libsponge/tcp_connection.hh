@@ -30,6 +30,8 @@ class TCPConnection {
     void unclear_shutdown();
 
     bool is_clear_shutdown() const;
+
+    void send_rst_to_peer();
   public:
     //! \name "Input" interface for the writer
     //!@{

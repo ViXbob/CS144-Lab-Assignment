@@ -29,13 +29,16 @@ void TCPConnection::collect_output() {
 }
 
 void TCPConnection::unclear_shutdown() {
+    _sender.stream_in().set_error();
+    _receiver.stream_out().set_error();
+    _is_unclear_shutdown = true;
+}
+
+void TCPConnection::send_rst_to_peer() {
     _sender.send_empty_segment();
     _sender.segments_out().front().header().rst = true;
     _segments_out.push(std::move(_sender.segments_out().front()));
     _sender.segments_out().pop();
-    _sender.stream_in().set_error();
-    _receiver.stream_out().set_error();
-    _is_unclear_shutdown = true;
 }
 
 bool TCPConnection::is_clear_shutdown() const {
@@ -60,6 +63,7 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
     DUMMY_CODE(seg); 
     _time_when_last_segment_received = _now_time;
     if(seg.header().rst) {
+        if(!_receiver.ackno().has_value() && _sender.next_seqno_absolute() == 0) return;
         unclear_shutdown();
     } else {
         _receiver.segment_received(seg);
@@ -89,8 +93,10 @@ void TCPConnection::tick(const size_t ms_since_last_tick) {
     _now_time += ms_since_last_tick;
     _sender.tick(ms_since_last_tick);
     collect_output();
-    if(_sender.consecutive_retransmissions() > TCPConfig::MAX_RETX_ATTEMPTS) 
-        unclear_shutdown();
+    if(_sender.consecutive_retransmissions() > TCPConfig::MAX_RETX_ATTEMPTS) {
+       unclear_shutdown();
+       send_rst_to_peer();
+    }
 }
 
 void TCPConnection::end_input_stream() { 
@@ -108,7 +114,7 @@ TCPConnection::~TCPConnection() {
     try {
         if (active()) {
             cerr << "Warning: Unclean shutdown of TCPConnection\n";
-            unclear_shutdown();
+            send_rst_to_peer();
             // Your code here: need to send a RST segment to the peer
         }
     } catch (const exception &e) {
