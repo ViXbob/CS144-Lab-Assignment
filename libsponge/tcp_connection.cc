@@ -93,7 +93,11 @@ void TCPConnection::tick(const size_t ms_since_last_tick) {
         unclear_shutdown();
 }
 
-void TCPConnection::end_input_stream() { _sender.stream_in().end_input(); }
+void TCPConnection::end_input_stream() { 
+    _sender.stream_in().end_input(); 
+    _sender.fill_window();
+    collect_output();
+}
 
 void TCPConnection::connect() {
     _sender.fill_window();
