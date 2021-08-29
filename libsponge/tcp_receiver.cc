@@ -28,5 +28,6 @@ size_t TCPReceiver::_ackno() const {
 }
 
 size_t TCPReceiver::window_size() const { 
-    return _capacity - (_reassembler.assembled_bytes() - _reassembler.stream_out().bytes_read()); 
+    // return _capacity - (_reassembler.assembled_bytes() - _reassembler.stream_out().bytes_read()); 
+    return stream_out().remaining_capacity();
 }

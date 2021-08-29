@@ -45,7 +45,13 @@ StreamReassembler::StreamReassembler(const size_t capacity) :
 //! contiguous substrings and writes them into the output stream in order.
 void StreamReassembler::push_substring(const string &data, const size_t index, const bool eof) {
     DUMMY_CODE(data, index, eof);
+    if(data.size() == 0) return;
     if(index >= _capacity + _output.bytes_read()) return;
+    // std::cerr << "index : " << index << "\n";
+    // std::cerr << "string : " << data << "\n";
+    // std::cerr << "capacity : " << _capacity << "\n";
+    // std::cerr << "bytes_read : " << _output.bytes_read() << "\n";
+    // std::cerr << "window_size : " << _output.remaining_capacity() << "\n"; 
     string tmp(data);
     if(index + tmp.size() > _capacity + _output.bytes_read()) {
         tmp.resize(_capacity + _output.bytes_read() - index);
@@ -95,6 +101,7 @@ void StreamReassembler::push_substring(const string &data, const size_t index, c
         _str_to_assemble.pop_front();
     }
     if(empty()) _output.end_input();
+    // std::cerr << "updated_window_size : " << _output.remaining_capacity() << "\n"; 
 }
 
 size_t StreamReassembler::unassembled_bytes() const { return _stored_bytes - _assembled_bytes; }

@@ -152,6 +152,8 @@ class TCPSender {
     //!@}
 
     void pop_outstanding_segment();
+
+    WrappingInt32 isn() const { return _isn; }
 };
 
 #endif  // SPONGE_LIBSPONGE_TCP_SENDER_HH

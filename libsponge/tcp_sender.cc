@@ -4,6 +4,8 @@
 
 #include <random>
 
+#include <iostream>
+
 // Dummy implementation of a TCP sender
 
 // For Lab 3, please replace with a real implementation that passes the
@@ -104,6 +106,9 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
 //! \param[in] ms_since_last_tick the number of milliseconds since the last call to this method
 void TCPSender::tick(const size_t ms_since_last_tick) { 
     DUMMY_CODE(ms_since_last_tick);
+    // std::cerr << "timer is" << (_timer.is_stopped() ? " not " : " ") << "running\n";
+    // std::cerr << "_oustanding_segment.size : " << _outstanding_segment.size() << "\n";
+    // std::cerr << "window_size : " << _window_size << "\n";
     _timer.time_expired(ms_since_last_tick);
     if(_timer.is_expired() && !_outstanding_segment.empty()) {
         if(_window_size > 0) {
