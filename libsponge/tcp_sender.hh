@@ -155,7 +155,7 @@ class TCPSender {
 
     WrappingInt32 isn() const { return _isn; }
 
-    uint64_t abs_ackno() const { return _ackno; }
+    uint64_t ackno_absolute() const { return _ackno; }
 
     std::set<Type1, TCPSegmentComparator> &outstanding_segment() { return _outstanding_segment; }
 
@@ -166,6 +166,24 @@ class TCPSender {
     bool SYN() const { return _syn; }
 
     bool FIN() const { return _fin; }
+
+    // State of sender
+    bool CLOSED() const { return (next_seqno_absolute() == 0); }
+    bool SYN_SENT() const { return (next_seqno_absolute() > 0 && next_seqno_absolute() == bytes_in_flight()); }
+    bool SYN_ACKED() const { return (next_seqno_absolute() > bytes_in_flight() && !stream_in().eof()); }
+    bool SYN_ACKED_FIN_TO_SEND() const { 
+        return (next_seqno_absolute() < stream_in().bytes_written() + 2 && stream_in().eof()); 
+    }
+    bool FIN_SENT() const { 
+        return (stream_in().eof() 
+            && next_seqno_absolute() == stream_in().bytes_written() + 2
+            && bytes_in_flight() > 0); 
+    }
+    bool FIN_ACKED() const {
+        return (stream_in().eof() 
+            && next_seqno_absolute() == stream_in().bytes_written() + 2
+            && bytes_in_flight() == 0); 
+    }
 };
 
 #endif  // SPONGE_LIBSPONGE_TCP_SENDER_HH

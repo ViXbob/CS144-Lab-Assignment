@@ -38,37 +38,47 @@ uint64_t TCPSender::bytes_in_flight() const { return _bytes_in_flight; }
 void TCPSender::fill_window() {
     size_t window_size = _window_size;
     if(window_size == 0) window_size = 1;
+    if(ackno_absolute() + window_size <= next_seqno_absolute()) return;
 
-    window_size = _ackno + window_size - _next_seqno;
+    window_size = ackno_absolute() + window_size - next_seqno_absolute();
 
     size_t MAX_PAYLOAD_SIZE = TCPConfig::MAX_PAYLOAD_SIZE;
 
+    /*
+        fill_window when CLOSED or SYN_SENT or SYN_ACKED or SYN_ACKED_FIN_TO_SEND
+    */
+
     while(window_size > 0 && 
-    (_stream.bytes_written() > _stream.bytes_read() 
-    || (_fin == false && _stream.eof() == true)
-    || (_syn == false && _ackno == 0) )) {
+        (CLOSED() 
+        || ((SYN_SENT() || SYN_ACKED()) && !stream_in().buffer_empty()) 
+        || SYN_ACKED_FIN_TO_SEND())){
+            
         size_t used = 0;
         
         Type1 tmp_oustanding_segment;
         tmp_oustanding_segment.first = _syn + _stream.bytes_read();
 
         TCPSegment seg;
-        if(_syn == false && _ackno == 0) {
+
+        // Set SYN when CLOSED
+        if((used + 1 <= window_size) && CLOSED()) {
             _syn = true;
             seg.header().syn = true;
             used += 1;
         }
-
+        
         seg.header().seqno = wrap(tmp_oustanding_segment.first, _isn);
-        seg.payload() = Buffer(_stream.read(min(window_size - used, MAX_PAYLOAD_SIZE)));
-        used += seg.payload().size();
+        
+        if(window_size > used) {
+            seg.payload() = Buffer(_stream.read(min(window_size - used, MAX_PAYLOAD_SIZE)));
+            used += seg.payload().size();
+        }
 
-        if(used + 1 <= window_size) {
-            if(_fin == false && _stream.eof() == true) {
-                seg.header().fin = true;
-                _fin = true;
-                used += 1;
-            }
+        // Set FIN when SYN_ACKED_FIN_TO_SEND
+        if((used + 1 <= window_size) && SYN_ACKED_FIN_TO_SEND()) {
+            seg.header().fin = true;
+            _fin = true;
+            used += 1;
         }
 
         window_size -= used;
@@ -88,7 +98,7 @@ void TCPSender::fill_window() {
 void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_size) { 
     DUMMY_CODE(ackno, window_size); 
     uint64_t new_ackno = unwrap(ackno, _isn, _ackno);
-    if(new_ackno > _next_seqno) return;
+    if(new_ackno > next_seqno_absolute()) return;
     if(new_ackno > _ackno) {
         _rto = _initial_retransmission_timeout;
         _consecutive_retransmissions = 0;

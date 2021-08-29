@@ -67,6 +67,10 @@ class TCPReceiver {
     size_t _ackno() const;
 
     std::optional<WrappingInt32> isn() const { return _ISN; }
+
+    bool LISTEN() const { return (!ackno().has_value()); }
+    bool SYN_RECV() const { return (ackno().has_value() && !stream_out().input_ended()); }
+    bool FIN_RECV() const { return stream_out().input_ended(); }
 };
 
 #endif  // SPONGE_LIBSPONGE_TCP_RECEIVER_HH

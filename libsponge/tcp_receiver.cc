@@ -13,10 +13,10 @@ using namespace std;
 void TCPReceiver::segment_received(const TCPSegment &seg) {
     DUMMY_CODE(seg);
     // LISTEN and first segment with SYN
-    if(seg.header().syn && !ackno().has_value()) _ISN.emplace(seg.header().seqno);
+    if(seg.header().syn && LISTEN()) _ISN.emplace(seg.header().seqno);
 
     // State: SYN_RECV
-    if(ackno().has_value() && !stream_out().input_ended()) {
+    if(SYN_RECV()) {
         size_t index = unwrap(seg.header().seqno, isn().value(), _ackno()) - !seg.header().syn;
         _reassembler.push_substring(seg.payload().copy(), index, seg.header().fin);
     }
