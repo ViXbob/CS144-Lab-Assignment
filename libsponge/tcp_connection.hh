@@ -13,7 +13,7 @@ class TCPConnection {
     TCPReceiver _receiver{_cfg.recv_capacity};
     TCPSender _sender{_cfg.send_capacity, _cfg.rt_timeout, _cfg.fixed_isn};
     bool _is_unclear_shutdown{false};
-    // bool _is_clear_shutdown{false};
+    bool _is_clear_shutdown{false};
     size_t _now_time{0};
     size_t _time_when_last_segment_received{0};
 
@@ -29,9 +29,13 @@ class TCPConnection {
 
     void unclear_shutdown();
 
-    bool is_clear_shutdown() const;
+    // bool is_clear_shutdown() const;
 
-    void send_rst_to_peer();
+    void send_empty_segment();
+
+    void test_end();
+
+    void set_segment(TCPSegment &seg);
   public:
     //! \name "Input" interface for the writer
     //!@{
