@@ -31,7 +31,7 @@ void StreamReassembler::remove_segement(const Type1 &it, size_t l, size_t r, Typ
     } else {
         _stored_bytes += min(r, it -> second) - it -> first;
         auto node = *it;
-        node.second = r;
+        node.first = r;
         if(node.second > node.first)
             _insert.push_back(node);
     }
