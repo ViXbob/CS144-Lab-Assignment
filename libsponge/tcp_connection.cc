@@ -19,7 +19,10 @@ void TCPConnection::collect_output() {
         if(_receiver.ackno().has_value()) {
             _sender.segments_out().front().header().ack = true;
             _sender.segments_out().front().header().ackno = _receiver.ackno().value();
-            _sender.segments_out().front().header().win = _receiver.window_size();
+            if(_receiver.window_size() >= numeric_limits<uint16_t> :: max()) 
+                _sender.segments_out().front().header().win = numeric_limits<uint16_t> :: max();
+            else 
+                _sender.segments_out().front().header().win = _receiver.window_size();
         }
         if(!_sender.stream_in().eof() && _receiver.stream_out().input_ended())
             _linger_after_streams_finish = false;

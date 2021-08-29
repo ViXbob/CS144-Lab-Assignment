@@ -65,6 +65,8 @@ class TCPReceiver {
     const ByteStream &stream_out() const { return _reassembler.stream_out(); }
     //!@}
     size_t _ackno() const;
+
+    std::optional<WrappingInt32> isn() const { return _ISN; }
 };
 
 #endif  // SPONGE_LIBSPONGE_TCP_RECEIVER_HH

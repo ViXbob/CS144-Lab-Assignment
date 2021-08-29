@@ -152,6 +152,20 @@ class TCPSender {
     //!@}
 
     void pop_outstanding_segment();
+
+    WrappingInt32 isn() const { return _isn; }
+
+    uint64_t abs_ackno() const { return _ackno; }
+
+    std::set<Type1, TCPSegmentComparator> &outstanding_segment() { return _outstanding_segment; }
+
+    const std::set<Type1, TCPSegmentComparator> &outstanding_segment() const { return _outstanding_segment; }
+
+    uint16_t window_size() const { return _window_size; }
+
+    bool SYN() const { return _syn; }
+
+    bool FIN() const { return _fin; }
 };
 
 #endif  // SPONGE_LIBSPONGE_TCP_SENDER_HH
