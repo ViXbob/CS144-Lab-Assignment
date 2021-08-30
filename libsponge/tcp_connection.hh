@@ -5,6 +5,7 @@
 #include "tcp_receiver.hh"
 #include "tcp_sender.hh"
 #include "tcp_state.hh"
+#include <iostream>
 
 //! \brief A complete endpoint of a TCP connection
 class TCPConnection {
@@ -36,7 +37,58 @@ class TCPConnection {
     void test_end();
 
     void set_segment(TCPSegment &seg);
+
+class TCPConnectionDebugger {
+    private:
+        bool open_debugger{true};
+        const std::string left_1 = "\033[1;36m";
+        const std::string left_2 = "\033[1;32m";
+        const std::string right_ = "\033[0m";
+
+    public:
+        TCPConnectionDebugger(bool open = true) : open_debugger(open) {}
+        ~TCPConnectionDebugger() {}
+
+        std::string color_1(const std::string &data) {
+            return left_1 + data + right_;
+        }
+
+        std::string color_2(const std::string &data) {
+            return left_2 + data + right_;
+        }
+
+        void print_segment(const TCPConnection &that, const TCPSegment &seg, const std::string &desription, bool check = true) {
+            if(!check || !open_debugger) return;
+            std::cerr << "\n" << color_1(desription) << "\n";
+            std::cerr << (color_2("Flag") + " : ") 
+                      << (seg.header().syn ? "S" : "")
+                      << (seg.header().fin ? "F" : "")
+                      << (seg.header().ack ? "A" : "")
+                      << (seg.header().rst ? "R" : "") << "\n"
+                      << (color_2("Sequnce Number") + " : ")
+                      << (seg.header().seqno.raw_value()) << "\n"
+                      << (color_2("Acknowledgement Number") + " : ")
+                      << (seg.header().ackno) << "\n"
+                      << (color_2("Window Size") + " : ")
+                      << (seg.header().win) << "\n"
+                      << (color_2("Payload") + " : ")
+                      << (seg.payload().size() ? seg.payload().str() : "empty string") << "\n"
+                      << (color_2("Payload Size") + " : ")
+                      << (seg.payload().size()) << "\n"
+                      << (color_2("Sequnce Space") + " : ")
+                      << (seg.length_in_sequence_space()) << "\n"
+                      << (color_2("ackno of sender") + " : ")
+                      << (that._sender.ackno_absolute()) << "\n"
+                      << (color_2("next seqno absolute of sender") + " : ")
+                      << (that._sender.next_seqno_absolute()) << "\n";
+            if(that._sender.FIN_ACKED())
+                std::cerr << "FIN_ACKED" << std::endl;
+            if(that._receiver.FIN_RECV())
+                std::cerr << "FIN_RECV" << std::endl;
+        }
+};
   public:
+    TCPConnectionDebugger _debugger{true};
     //! \name "Input" interface for the writer
     //!@{
 
@@ -109,6 +161,29 @@ class TCPConnection {
     TCPConnection(const TCPConnection &other) = delete;
     TCPConnection &operator=(const TCPConnection &other) = delete;
     //!@}
+
+    friend void TCPConnectionDebugger::print_segment(const TCPConnection &that, const TCPSegment &seg, const std::string &desription, bool check = true);
+
+    // State of sender
+    bool CLOSED() const { return (_sender.next_seqno_absolute() == 0); }
+    bool SYN_SENT() const { return (_sender.next_seqno_absolute() > 0 && _sender.next_seqno_absolute() == bytes_in_flight()); }
+    bool SYN_ACKED() const { return (_sender.next_seqno_absolute() > bytes_in_flight() && !_sender.stream_in().eof()); }
+    bool SYN_ACKED_FIN_TO_SEND() const { 
+        return (_sender.next_seqno_absolute() < _sender.stream_in().bytes_written() + 2 && _sender.stream_in().eof()); 
+    }
+    bool FIN_SENT() const { 
+        return (_sender.stream_in().eof() 
+            && _sender.next_seqno_absolute() == _sender.stream_in().bytes_written() + 2
+            && bytes_in_flight() > 0); 
+    }
+    bool FIN_ACKED() const {
+        return (_sender.stream_in().eof() 
+            && _sender.next_seqno_absolute() == _sender.stream_in().bytes_written() + 2
+            && bytes_in_flight() == 0); 
+    }
+    bool LISTEN() const { return (!_receiver.ackno().has_value()); }
+    bool SYN_RECV() const { return (_receiver.ackno().has_value() && !_receiver.stream_out().input_ended()); }
+    bool FIN_RECV() const { return _receiver.stream_out().input_ended(); }
 };
 
 #endif  // SPONGE_LIBSPONGE_TCP_FACTORED_HH
