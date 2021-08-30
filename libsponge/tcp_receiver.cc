@@ -23,7 +23,7 @@ bool TCPReceiver::segment_received(const TCPSegment &seg) {
     if(LISTEN()) return false;
     // FIN
     if(seg.header().fin && FIN_RECV()) return false; 
-    // State: SYN_RECV
+    // accept segment when SYN_RECV
     if(SYN_RECV()) {
         size_t abs_seqno = unwrap(seg.header().seqno, isn().value(), _ackno());
         size_t index = abs_seqno - !seg.header().syn;
@@ -38,7 +38,6 @@ bool TCPReceiver::segment_received(const TCPSegment &seg) {
         }
         _reassembler.push_substring(seg.payload().copy(), index, seg.header().fin);
     }
-    // if(FIN_RECV()) return false;
     return true;
 }
 
