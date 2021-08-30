@@ -88,7 +88,7 @@ class TCPConnectionDebugger {
         }
 };
   public:
-    TCPConnectionDebugger _debugger{true};
+    TCPConnectionDebugger _debugger{false};
     //! \name "Input" interface for the writer
     //!@{
 

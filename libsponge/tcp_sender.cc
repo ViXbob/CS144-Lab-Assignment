@@ -130,6 +130,6 @@ unsigned int TCPSender::consecutive_retransmissions() const { return _consecutiv
 
 void TCPSender::send_empty_segment() {
     TCPSegment tmp;
-    tmp.header().seqno = _isn;
+    tmp.header().seqno = wrap(next_seqno_absolute(), _isn);
     _segments_out.push(tmp);
 }

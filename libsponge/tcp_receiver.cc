@@ -10,16 +10,36 @@ void DUMMY_CODE(Targs &&... /* unused */) {}
 
 using namespace std;
 
-void TCPReceiver::segment_received(const TCPSegment &seg) {
+bool TCPReceiver::segment_received(const TCPSegment &seg) {
     DUMMY_CODE(seg);
     // LISTEN and first segment with SYN
-    if(seg.header().syn && LISTEN()) _ISN.emplace(seg.header().seqno);
-
+    if(seg.header().syn) {
+        // refuse other syn if syn is already received
+        if(!LISTEN()) return false;
+        _ISN.emplace(seg.header().seqno);
+        if(seg.length_in_sequence_space() == 1) return true;
+    }
+    // still LISTEN
+    if(LISTEN()) return false;
+    // FIN
+    if(seg.header().fin && FIN_RECV()) return false; 
     // State: SYN_RECV
     if(SYN_RECV()) {
-        size_t index = unwrap(seg.header().seqno, isn().value(), _ackno()) - !seg.header().syn;
+        size_t abs_seqno = unwrap(seg.header().seqno, isn().value(), _ackno());
+        size_t index = abs_seqno - !seg.header().syn;
+        if(abs_seqno + seg.payload().size() + seg.header().syn < _ackno()) return false;
+        if(abs_seqno >= _ackno() + window_size()) {
+            /*
+                bare acknowledgement when (seqno == ackno) && (window_size == 0)
+                do not need to send a bare ack back
+            */
+            if(!(window_size() == 0 && seg.length_in_sequence_space() == 0)) 
+                return false;
+        }
         _reassembler.push_substring(seg.payload().copy(), index, seg.header().fin);
     }
+    // if(FIN_RECV()) return false;
+    return true;
 }
 
 optional<WrappingInt32> TCPReceiver::ackno() const { 

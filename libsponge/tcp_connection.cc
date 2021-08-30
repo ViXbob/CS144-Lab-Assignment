@@ -30,13 +30,19 @@ void TCPConnection::unclear_shutdown() {
     _is_unclear_shutdown = true;
 }
 
+// void TCPConnection::send_empty_segment() {
+//     TCPSegment seg;
+//     seg.header().seqno = _sender.
+//     set_segment(seg);
+//     _debugger.print_segment(*this, seg, "Segment sent!", _now_time <= 500);
+//     _segments_out.push(std::move(seg));
+// }
+
 void TCPConnection::send_empty_segment() {
-    TCPSegment seg;
-    seg.header().seqno = _sender.isn();
-    set_segment(seg);
-    _debugger.print_segment(*this, seg, "Segment sent!", _now_time <= 500);
-    _segments_out.push(std::move(seg));
+    _sender.send_empty_segment();
+    collect_output();
 }
+
 /*
 bool TCPConnection::is_clear_shutdown() const {
     bool prereq =  (_receiver.unassembled_bytes() == 0 && _receiver.stream_out().input_ended())
@@ -88,24 +94,42 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
     DUMMY_CODE(seg); 
     _debugger.print_segment(*this, seg, "Segment received!");
     _time_when_last_segment_received = _now_time;
+    bool send_empty = false;
+
+    if(!_receiver.segment_received(seg)) {
+        send_empty = true;
+        // std::cerr << "Run" << std::endl;
+    }
+
+    if(seg.header().ack && !CLOSED()) {
+        if(!_sender.ack_received(seg.header().ackno, seg.header().win))
+            send_empty = true;
+    }
+
+    if(CLOSED() && seg.header().syn) {
+        connect();
+        return;
+    }
+
     if(seg.header().rst) {
         if(!LISTEN() || !CLOSED()) {
             unclear_shutdown();
         }
-    } else {
-        _receiver.segment_received(seg);
-        if(seg.header().ack)
-            _sender.ack_received(seg.header().ackno, seg.header().win);
-        if(seg.header().fin && !(FIN_SENT() || FIN_ACKED()))
-            _sender.fill_window();
-        if(seg.length_in_sequence_space() > 0) {
-            if(CLOSED()) 
-                connect();
-            else 
-                send_empty_segment();
-        }
-        collect_output();
+        return;
     }
+
+    // if(seg.header().fin && !(FIN_SENT() || FIN_ACKED()))
+    //     _sender.fill_window();
+
+    if(seg.length_in_sequence_space() > 0) 
+        send_empty = true;
+    
+    if(send_empty) {
+        if(!LISTEN() && _sender.segments_out().empty())
+            _sender.send_empty_segment();
+    }
+
+    collect_output();
     test_end();
 }
 
