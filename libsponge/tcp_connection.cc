@@ -14,11 +14,15 @@ void DUMMY_CODE(Targs &&... /* unused */) {}
 
 using namespace std;
 
+const string TCPConnection::TCPConnectionDebugger::left_1 = "\033[1;36m";
+const string TCPConnection::TCPConnectionDebugger::left_2 = "\033[1;32m";
+const string TCPConnection::TCPConnectionDebugger::right_ = "\033[0m";
+
 void TCPConnection::collect_output() {
     while(!_sender.segments_out().empty()) {
         TCPSegment seg(std::move(_sender.segments_out().front()));
         set_segment(seg);
-        _debugger.print_segment(*this, seg, "Segment sent!", _now_time <= 500);
+        // _debugger.print_segment(*this, seg, "Segment sent!", _now_time <= 500);
         _segments_out.push(std::move(seg));
         _sender.segments_out().pop();
     }
@@ -110,7 +114,7 @@ void TCPConnection::segment_receive_route(const TCPSegment &seg) {
 
 void TCPConnection::segment_received(const TCPSegment &seg) { 
     DUMMY_CODE(seg); 
-    _debugger.print_segment(*this, seg, "Segment received!");
+    // _debugger.print_segment(*this, seg, "Segment received!");
     _time_when_last_segment_received = _now_time;
     segment_receive_route(seg);
     collect_output();

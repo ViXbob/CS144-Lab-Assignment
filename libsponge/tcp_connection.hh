@@ -44,9 +44,9 @@ class TCPConnection {
     class TCPConnectionDebugger {
         private:
             bool open_debugger{true};
-            const std::string left_1 = "\033[1;36m";
-            const std::string left_2 = "\033[1;32m";
-            const std::string right_ = "\033[0m";
+            static const std::string left_1;
+            static const std::string left_2;
+            static const std::string right_;
 
         public:
             TCPConnectionDebugger(bool open = true) : open_debugger(open) {}
