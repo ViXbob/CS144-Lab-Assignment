@@ -3,28 +3,29 @@
 
 #include <string>
 #include <queue>
+#include <string_view>
 
 //! \brief An in-order byte stream.
 
 //! Bytes are written on the "input" side and read from the "output"
 //! side.  The byte stream is finite: the writer can end the input,
 //! and then no more bytes can be written.
-class ByteStream {
+class ByteStream{
   private:
     // Your code here -- add private members as necessary.
+    std::deque<std::string_view> _views{};
     size_t _capacity;
-    size_t _byte_written;
-    size_t _byte_read;
-    std::deque<char> _byte_stream;
-    bool _end;
+    size_t _byte_written{0};
+    size_t _byte_read{0};
+    // std::deque<char> _byte_stream;
+    bool _end{false};
 
     // Hint: This doesn't need to be a sophisticated data structure at
     // all, but if any of your tests are taking longer than a second,
     // that's a sign that you probably want to keep exploring
     // different approaches.
 
-    bool _error;  //!< Flag indicating that the stream suffered an error.
-
+    bool _error{false};  //!< Flag indicating that the stream suffered an error.
   public:
     //! Construct a stream with room for `capacity` bytes.
     ByteStream(const size_t capacity);
@@ -36,6 +37,8 @@ class ByteStream {
     //! as will fit, and return how many were written.
     //! \returns the number of bytes accepted into the stream
     size_t write(const std::string &data);
+
+    size_t write(const std::string_view &str);
 
     //! \returns the number of additional bytes that the stream has space for
     size_t remaining_capacity() const;
