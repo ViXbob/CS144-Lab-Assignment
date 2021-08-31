@@ -1,3 +1,4 @@
+#include "tcp_sponge_socket.hh"
 #include "socket.hh"
 #include "util.hh"
 
@@ -19,7 +20,7 @@ void get_URL(const string &host, const string &path) {
     // the "eof" (end of file).
     // uint16_t portnumber = ((std::random_device()()) % 50000) + 1025;
 
-    TCPSocket socket1;
+    CS144TCPSocket socket1;
     // socket1.bind(Address("127.0.0.1", portnumber));
     socket1.connect(Address(host, "http"));
     socket1.write("GET " + path + " HTTP/1.1\r\nHost: " + host + "\r\n\r\n\r\n");
@@ -38,10 +39,11 @@ void get_URL(const string &host, const string &path) {
 
         Example (?)
     */
-    socket1.close();
+    // socket1.close();
 
     // cerr << "Function called: get_URL(" << host << ", " << path << ").\n";
     // cerr << "Warning: get_URL() has not been implemented yet.\n";
+    socket1.wait_until_closed();
 }
 
 int main(int argc, char *argv[]) {
