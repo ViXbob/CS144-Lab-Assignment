@@ -4,6 +4,7 @@
 #include <string>
 #include <queue>
 #include <string_view>
+#include "buffer.hh"
 
 //! \brief An in-order byte stream.
 
@@ -13,7 +14,7 @@
 class ByteStream{
   private:
     // Your code here -- add private members as necessary.
-    std::deque<std::string_view> _views{};
+    std::deque<Buffer> _buffer{};
     size_t _capacity;
     size_t _byte_written{0};
     size_t _byte_read{0};
